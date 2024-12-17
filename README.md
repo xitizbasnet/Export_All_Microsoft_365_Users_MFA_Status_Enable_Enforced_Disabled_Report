@@ -164,23 +164,17 @@ Write-Host "Script completed. Results exported to $Csvfile." -ForegroundColor Cy
 
 ### Run the PowerShell Script:
 1. **Open PowerShell as Administrator**.
-2. Navigate to the folder where the script is located:
+2. Navigate to the folder where the script is located and Run the script:
 
 ```powershell
-cd C:\Users\Administrator\Desktop\scripts
+cd C:\Users\Administrator\Desktop\scripts\Export-MFAstatus.ps1
 ```
 
-3. Run the script:
-
-```powershell
-.\Export-MFAstatus.ps1
-```
-
-4. When prompted, **sign in** using your Microsoft admin credentials.  
+3. When prompted, **sign in** using your Microsoft admin credentials.  
    - Enter your password
    - Click **Sign in**
    
-5. **Grant consent** for the necessary permissions:
+4. **Grant consent** for the necessary permissions:
    - **Enable Consent on behalf of your organization**
    - Click **Accept**
 
