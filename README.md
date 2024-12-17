@@ -34,7 +34,7 @@ Install-Module Microsoft.Graph.Beta -AllowClobber -Force
 You can either **download** the `Export-MFAstatus.ps1` script or **create** it manually.
 
 ### Option 1: Download Script
-- [Download the script](#) (Save it in the `C:\Users\Administrator\Desktop\scripts` folder).
+- (Save it in the `C:\Users\Administrator\Desktop\scripts` folder).
 
 ### Option 2: Create the Script Manually
 1. Open **Notepad**.
