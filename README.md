@@ -159,15 +159,15 @@ Write-Host "Script completed. Results exported to $Csvfile." -ForegroundColor Cy
 ## Export MFA Status Report to CSV 💾
 
 ### Before Running the Script:
-1. Create a folder named `temp` on your **Desktop** (C:\temp).
-2. Ensure you have the `Export-MFAstatus.ps1` script saved in the `C:\scripts` folder.
+1. Create a folder named `temp` on your **Desktop** (C:\Users\Administrator\Desktop\temp).
+2. Ensure you have the `Export-MFAstatus.ps1` script saved in the `C:\Users\Administrator\Desktop\scripts` folder.
 
 ### Run the PowerShell Script:
 1. **Open PowerShell as Administrator**.
-2. Navigate to the folder where the script is located and Run the script:
+2. Run the script:
 
 ```powershell
-cd C:\Users\Administrator\Desktop\scripts\Export-MFAstatus.ps1
+C:\Users\Administrator\Desktop\scripts\Export-MFAstatus.ps1
 ```
 
 3. When prompted, **sign in** using your Microsoft admin credentials.  
