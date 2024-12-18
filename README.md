@@ -44,27 +44,62 @@ You can either **download** the `Export-MFAstatus.ps1` script or **create** it m
 2. Copy and paste the following code:
 
 ```powershell
-# Connect to Microsoft Graph with necessary scopes
-Connect-MgGraph -Scopes "User.Read.All", "UserAuthenticationMethod.Read.All" -NoWelcome
+<#
+    .SYNOPSIS
+    Get-MFAReport.ps1
 
-# Create variable for the date stamp
-$LogDate = Get-Date -f yyyyMMddhhmm
+    .DESCRIPTION
+    Export Microsoft 365 per-user MFA report with Micrososoft Graph PowerShell.
 
-# Define CSV file export location variable
-$Csvfile = "C:\temp\MFAUsers_$LogDate.csv"
+    .LINK
+    www.alitajran.com/export-office-365-users-mfa-status-with-powershell/
 
-# Get all Microsoft Entra ID users
-$users = Get-MgUser -All
+    .NOTES
+    Written by: ALI TAJRAN
+    Website:    www.alitajran.com
+    LinkedIn:   linkedin.com/in/alitajran
 
-# Initialize a List to store the data
+    .CHANGELOG
+    V1.00, 04/04/2021 - Initial version
+    V2.00, 08/04/2024 - Rewritten for Microsoft Graph PowerShell
+#>
+
+# Connect to Microsoft Graph with the required scopes
+Connect-MgGraph -Scopes "User.Read.All", "Policy.ReadWrite.AuthenticationMethod", "UserAuthenticationMethod.Read.All"
+
+# CSV export file path
+$CSVfile = "C:\temp\MFAUsers.csv"
+
+# Get properties
+$Properties = @(
+    'Id',
+    'DisplayName',
+    'UserPrincipalName',
+    'UserType',
+    'Mail',
+    'ProxyAddresses',
+    'AccountEnabled',
+    'CreatedDateTime'
+)
+
+# Get all users
+[array]$Users = Get-MgUser -All -Property $Properties | Select-Object $Properties
+
+# Initialize the report list
 $Report = [System.Collections.Generic.List[Object]]::new()
+
+# Check if any users were retrieved
+if (-not $Users) {
+    Write-Host "No users found. Exiting script." -ForegroundColor Red
+    return
+}
 
 # Initialize progress counter
 $counter = 0
-$totalUsers = $users.Count
+$totalUsers = $Users.Count
 
-# Loop through each user account
-foreach ($user in $users) {
+# Loop through each user and get their MFA settings
+foreach ($User in $Users) {
     $counter++
 
     # Calculate percentage completion
@@ -73,104 +108,82 @@ foreach ($user in $users) {
     # Define progress bar parameters with user principal name
     $progressParams = @{
         Activity        = "Processing Users"
-        Status          = "User $($counter) of $totalUsers - $($user.UserPrincipalName) - $percentComplete% Complete"
+        Status          = "User $($counter) of $totalUsers - $($User.UserPrincipalName) - $percentComplete% Complete"
         PercentComplete = $percentComplete
     }
 
     Write-Progress @progressParams
 
-    # Create an object to store user MFA information
-    $ReportLine = [PSCustomObject]@{
-        DisplayName               = "-"
-        UserPrincipalName         = "-"
-        MFAstatus                 = "Disabled"
-        DefaultMFAMethod          = "-"
-        Email                     = "-"
-        Fido2                     = "-"
-        MicrosoftAuthenticatorApp = "-"
-        Phone                     = "-"
-        SoftwareOath              = "-"
-        TemporaryAccessPass       = "-"
-        WindowsHelloForBusiness   = "-"
-    }
+    # Get MFA settings
+    $MFAStateUri = "https://graph.microsoft.com/beta/users/$($User.Id)/authentication/requirements"
+    $Data = Invoke-MgGraphRequest -Uri $MFAStateUri -Method GET
 
-    $ReportLine.UserPrincipalName = $user.UserPrincipalName
-    $ReportLine.DisplayName = $user.DisplayName
+    # Get the default MFA method
+    $DefaultMFAUri = "https://graph.microsoft.com/beta/users/$($User.Id)/authentication/signInPreferences"
+    $DefaultMFAMethod = Invoke-MgGraphRequest -Uri $DefaultMFAUri -Method GET
 
-    # Retrieve the default MFA method
-    $DefaultMFAMethod = Get-MgBetaUserAuthenticationSignInPreference -UserId $user.Id
+    # Determine the MFA default method
     if ($DefaultMFAMethod.userPreferredMethodForSecondaryAuthentication) {
-        $ReportLine.DefaultMFAMethod = $DefaultMFAMethod.userPreferredMethodForSecondaryAuthentication
-    }
-    else {
-        $ReportLine.DefaultMFAMethod = "Not set"
-    }
-
-    # Check authentication methods for each user
-    $MFAData = Get-MgUserAuthenticationMethod -UserId $user.Id
-
-    foreach ($method in $MFAData) {
-
-        Switch ($method.AdditionalProperties["@odata.type"]) {
-            "#microsoft.graph.emailAuthenticationMethod" {
-                $ReportLine.Email = $true
-                $ReportLine.MFAstatus = "Enabled"
-            }
-            "#microsoft.graph.fido2AuthenticationMethod" {
-                $ReportLine.Fido2 = $true
-                $ReportLine.MFAstatus = "Enabled"
-            }
-            "#microsoft.graph.microsoftAuthenticatorAuthenticationMethod" {
-                $ReportLine.MicrosoftAuthenticatorApp = $true
-                $ReportLine.MFAstatus = "Enabled"
-            }
-            "#microsoft.graph.phoneAuthenticationMethod" {
-                $ReportLine.Phone = $true
-                $ReportLine.MFAstatus = "Enabled"
-            }
-            "#microsoft.graph.softwareOathAuthenticationMethod" {
-                $ReportLine.SoftwareOath = $true
-                $ReportLine.MFAstatus = "Enabled"
-            }
-            "#microsoft.graph.temporaryAccessPassAuthenticationMethod" {
-                $ReportLine.TemporaryAccessPass = $true
-                $ReportLine.MFAstatus = "Enabled"
-            }
-            "#microsoft.graph.windowsHelloForBusinessAuthenticationMethod" {
-                $ReportLine.WindowsHelloForBusiness = $true
-                $ReportLine.MFAstatus = "Enabled"
-            }
+        $MFAMethod = $DefaultMFAMethod.userPreferredMethodForSecondaryAuthentication
+        Switch ($MFAMethod) {
+            "push" { $MFAMethod = "Microsoft authenticator app" }
+            "oath" { $MFAMethod = "Authenticator app or hardware token" }
+            "voiceMobile" { $MFAMethod = "Mobile phone" }
+            "voiceAlternateMobile" { $MFAMethod = "Alternate mobile phone" }
+            "voiceOffice" { $MFAMethod = "Office phone" }
+            "sms" { $MFAMethod = "SMS" }
+            Default { $MFAMethod = "Unknown method" }
         }
     }
-    # Add the report line to the List
+    else {
+        $MFAMethod = "Not Enabled"
+    }
+
+    # Filter only the aliases
+    $Aliases = ($User.ProxyAddresses | Where-Object { $_ -clike "smtp*" } | ForEach-Object { $_ -replace "smtp:", "" }) -join ', '
+
+    # Create a report line for each user
+    $ReportLine = [PSCustomObject][ordered]@{
+        UserPrincipalName = $User.UserPrincipalName
+        DisplayName       = $User.DisplayName
+        MFAState          = $Data.PerUserMfaState
+        MFADefaultMethod  = $MFAMethod
+        PrimarySMTP       = $User.Mail
+        Aliases           = $Aliases
+        UserType          = $User.UserType
+        AccountEnabled    = $User.AccountEnabled
+        CreatedDateTime   = $User.CreatedDateTime
+    }
     $Report.Add($ReportLine)
 }
 
-# Clear progress bar
+# Complete the progress bar
 Write-Progress -Activity "Processing Users" -Completed
 
-# Export user information to CSV
-$Report | Export-Csv -Path $Csvfile -NoTypeInformation -Encoding UTF8
+# Display the report in a grid view
+$Report | Out-GridView -Title "Microsoft 365 per-user MFA Report"
 
-Write-Host "Script completed. Results exported to $Csvfile." -ForegroundColor Cyan
+# Export the report to a CSV file
+$Report | Export-Csv -Path $CSVfile -NoTypeInformation -Encoding utf8
+Write-Host "Microsoft 365 per-user MFA Report is in $CSVfile" -ForegroundColor Cyan
 ```
 
-3. **Save** the file as `Export-MFAstatus.ps1` in the `C:\scripts` folder.
+3. **Save** the file as `Get-MFAReport.ps1` in the `C:\Users\Administrator\Desktop\scripts` folder.
 
 ---
 
 ## Export MFA Status Report to CSV 💾
 
 ### Before Running the Script:
-1. Create a folder named `temp` on your **Desktop** (C:\Users\Administrator\Desktop\temp).
-2. Ensure you have the `Export-MFAstatus.ps1` script saved in the `C:\Users\Administrator\Desktop\scripts` folder.
+1. Create a folder named `temp` on your **Desktop** (C:\temp). **Note; This is inside the This Pc\Local Disk(C) \temp
+2. Ensure you have the `Get-MFAReport.ps1` script saved in the `C:\Users\Administrator\Desktop\scripts` folder.
 
-### Run the PowerShell Script:
+### Run the Get-MFAReport PowerShell Script:
 1. **Open PowerShell as Administrator**.
 2. Run the script:
 
 ```powershell
-C:\Users\Administrator\Desktop\scripts\Export-MFAstatus.ps1
+C:\Users\Administrator\Desktop\scripts\Get-MFAReport.ps1
 ```
 
 3. When prompted, **sign in** using your Microsoft admin credentials.  
@@ -189,6 +202,13 @@ The PowerShell script will show a progress bar and notify you when it's finished
 ```
 Script completed. Results exported to C:\temp\MFAUsers_202309191236.csv.
 ```
+
+## Open MFA Users report CSV file 💾
+
+The **Get-MFAReport.ps1** PowerShell script will export Office 365 users MFA status to CSV file. Find the file MFAUsers.csv in the path C:\temp.(Note: This Pc\Local Disk (c)\Temp)
+
+The CSV file name is seen as **MFAUsers.csv** 
+
 
 > You can find the CSV file in the `C:\temp` folder. Open it using **Microsoft Excel** or any CSV viewer to review the results.
 
@@ -216,3 +236,5 @@ You’ve successfully learned how to export all Microsoft 365 users' MFA status 
 
 **Next Steps**:  
 - Review users with **MFA disabled** and encourage them to enable MFA for enhanced security.
+
+  *The End*
