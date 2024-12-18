@@ -22,6 +22,9 @@ Before running the script, you need to install the **Microsoft Graph PowerShell 
 
 ```powershell
 Install-Module Microsoft.Graph -Force
+```
+
+```powershell
 Install-Module Microsoft.Graph.Beta -AllowClobber -Force
 ```
 
@@ -29,7 +32,7 @@ Install-Module Microsoft.Graph.Beta -AllowClobber -Force
 
 ---
 
-## Download MFA Status PowerShell Script 📥
+## Get MFA Status(Enable/Enforced/Disabled) PowerShell Script 📥
 
 You can either **download** the `Export-MFAstatus.ps1` script or **create** it manually.
 
