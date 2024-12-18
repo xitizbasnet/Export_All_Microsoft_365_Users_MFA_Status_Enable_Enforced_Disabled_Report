@@ -1,4 +1,4 @@
-# Export All Microsoft 365 Users MFA Status(Enable/Enforced/Desabled) Report 🚀
+# Export All Microsoft 365 Users MFA Status(Enable/Enforced/Disabled) Report 🚀
 In Microsoft 365, checking the Multi-Factor Authentication (MFA) status per user is possible via the Microsoft Entra admin center. However, it doesn’t provide detailed information. To get a detailed list of all users' MFA statuses in a single CSV file, you can use a PowerShell script.
 
 This guide will walk you through how to **export all Microsoft 365 users' MFA status** to a CSV file using PowerShell.
