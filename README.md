@@ -1,4 +1,4 @@
-# Export All Microsoft 365 Users MFA Status Report 🚀
+# Export All Microsoft 365 Users MFA Status(Enable/Enforced/Desabled) Report 🚀
 In Microsoft 365, checking the Multi-Factor Authentication (MFA) status per user is possible via the Microsoft Entra admin center. However, it doesn’t provide detailed information. To get a detailed list of all users' MFA statuses in a single CSV file, you can use a PowerShell script.
 
 This guide will walk you through how to **export all Microsoft 365 users' MFA status** to a CSV file using PowerShell.
@@ -34,7 +34,7 @@ Install-Module Microsoft.Graph.Beta -AllowClobber -Force
 
 ## Get MFA Status(Enable/Enforced/Disabled) PowerShell Script 📥
 
-You can either **download** the `Export-MFAstatus.ps1` script or **create** it manually.
+You can either **download** the `Get-MFAReport.ps1` script or **create** it manually.
 
 ### Option 1: Download Script
 - (Save it in the `C:\Users\Administrator\Desktop\scripts` folder).
@@ -175,7 +175,8 @@ Write-Host "Microsoft 365 per-user MFA Report is in $CSVfile" -ForegroundColor C
 ## Export MFA Status Report to CSV 💾
 
 ### Before Running the Script:
-1. Create a folder named `temp` on your **Desktop** (C:\temp). **Note; This is inside the This Pc\Local Disk(C) \temp
+1. Create a folder named `temp` inside your **Local Disk(C)** (C:\temp).
+ **Note: This is inside the (This Pc\Local Disk(C)\temp)**
 2. Ensure you have the `Get-MFAReport.ps1` script saved in the `C:\Users\Administrator\Desktop\scripts` folder.
 
 ### Run the Get-MFAReport PowerShell Script:
@@ -200,12 +201,13 @@ The PowerShell script will show a progress bar and notify you when it's finished
 - **Example Output:**
 
 ```
-Script completed. Results exported to C:\temp\MFAUsers_202309191236.csv.
+Script completed. Results exported to C:\temp\MFAUsers.csv
 ```
 
 ## Open MFA Users report CSV file 💾
 
-The **Get-MFAReport.ps1** PowerShell script will export Office 365 users MFA status to CSV file. Find the file MFAUsers.csv in the path C:\temp.(Note: This Pc\Local Disk (c)\Temp)
+The **Get-MFAReport.ps1** PowerShell script will export Office 365 users MFA status to CSV file. Find the file MFAUsers.csv in the path C:\temp.
+**(Note: This Pc\Local Disk (c)\Temp)**
 
 The CSV file name is seen as **MFAUsers.csv** 
 
@@ -232,9 +234,9 @@ The script checks for the following MFA methods for each user:
 
 ## Conclusion 🎯
 
-You’ve successfully learned how to export all Microsoft 365 users' MFA status to a CSV file. By using the **Microsoft Graph PowerShell module**, the `Export-MFAstatus.ps1` script provides an efficient way to gather this information in a structured manner. This report helps you see which users have MFA enabled and which authentication methods they use.
+You’ve successfully learned how to export all Microsoft 365 users' MFA status to a CSV file. By using the **Microsoft Graph PowerShell module**, the `Get-MFAReport.ps1` script provides an efficient way to gather this information in a structured manner. This report helps you see which users have MFA enabled and which authentication methods they use.
 
 **Next Steps**:  
 - Review users with **MFA disabled** and encourage them to enable MFA for enhanced security.
 
-  *The End*
+  **The End**
